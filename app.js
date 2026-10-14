@@ -6,6 +6,10 @@ let filter = 'all';
 let githubData = null;
 let githubFailed = false;
 let githubRequest = null;
+let githubLoading = false;
+const GITHUB_USER = 'Iris-YixinXu';
+const GITHUB_CACHE_KEY = 'xu-yixin-github-v2';
+const GITHUB_CACHE_TTL = 5 * 60 * 1000;
 const t = (zh, en) => language === 'zh' ? zh : en;
 const icon = (name) => {
   const paths = {
@@ -87,7 +91,7 @@ function timeline() {
 }
 
 function githubSection() {
-  return `<section class="section" aria-labelledby="github-heading"><div class="section-heading"><h2 id="github-heading">On GitHub <span>${t('代码里的日常','A little code, every day')}</span></h2><a class="text-link" href="https://github.com/Iris-YixinXu" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div><div class="github-panel"><div><h3>Building, learning.</h3><p>${t('我的公开项目与开源足迹。','My public projects and open-source journey.')}</p></div><div class="github-stats"><div><strong data-github="repos">—</strong><small>${t('公开仓库','PUBLIC REPOS')}</small></div><div><strong data-github="stars">—</strong><small>${t('仓库获星','REPO STARS')}</small></div><div><strong data-github="followers">—</strong><small>${t('关注者','FOLLOWERS')}</small></div></div></div><p class="github-status" id="github-status" aria-live="polite">${t('正在读取 GitHub 公开数据…','Loading public GitHub data…')}</p></section>`;
+  return `<section class="section" aria-labelledby="github-heading"><div class="section-heading"><h2 id="github-heading">On GitHub <span style="display:block;margin:5px 0 0">${t('代码里的日常','A little code, every day')}</span></h2><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><button id="github-refresh" class="project-open" type="button" data-github-refresh>${t('刷新数据 ↻','Refresh data ↻')}</button><a class="text-link" href="https://github.com/Iris-YixinXu" target="_blank" rel="noopener noreferrer">GitHub ↗</a></div></div><div class="github-panel"><div><h3>Building, learning.</h3><p>${t('我的公开项目与开源足迹。','My public projects and open-source journey.')}</p></div><div class="github-stats"><div><strong data-github="repos">—</strong><small>${t('公开仓库','PUBLIC REPOS')}</small></div><div><strong data-github="stars">—</strong><small>${t('仓库获星','REPO STARS')}</small></div><div><strong data-github="followers">—</strong><small>${t('关注者','FOLLOWERS')}</small></div></div></div><p class="github-status" id="github-status" aria-live="polite">${t('正在读取 GitHub 公开数据…','Loading public GitHub data…')}</p></section>`;
 }
 
 function homePage() {
@@ -185,42 +189,70 @@ function openProject(id) {
 function updateGithub() {
   const status = $('#github-status');
   if (!status) return;
+  const refreshButton = $('#github-refresh');
+  if (refreshButton) {
+    refreshButton.disabled = githubLoading;
+    refreshButton.setAttribute('aria-busy', String(githubLoading));
+    refreshButton.textContent = githubLoading ? t('刷新中…', 'Refreshing…') : t('刷新数据 ↻', 'Refresh data ↻');
+  }
+  let timestamp = '';
   if (githubData) {
     Object.entries({repos: githubData.repos, stars: githubData.stars, followers: githubData.followers}).forEach(([key, value]) => {
       const node = $(`[data-github="${key}"]`); if (node) node.textContent = String(value);
     });
-    const timestamp = new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en', {year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(githubData.updated));
-    status.textContent = t(`GitHub 公开数据 · 更新于 ${timestamp} · 获星为公开仓库的 Stars 合计。`,`Public GitHub data · Updated ${timestamp} · Stars are summed across public owned repositories.`);
-  } else if (githubFailed) status.textContent = t('暂时无法读取公开数据，可通过上方链接访问我的 GitHub。','Public data is temporarily unavailable. You can visit my GitHub using the link above.');
+    timestamp = new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en', {year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(githubData.updated));
+  }
+  if (githubLoading) status.textContent = t('正在刷新 GitHub 公开数据…', 'Refreshing public GitHub data…');
+  else if (githubFailed) status.textContent = githubData
+    ? t(`更新暂时失败，当前为 ${timestamp} 的数据，可点击“刷新数据”重试。`, `Refresh failed. Showing data from ${timestamp}; use Refresh data to retry.`)
+    : t('暂时无法读取公开数据，可点击“刷新数据”重试。', 'Public data is temporarily unavailable. Use Refresh data to retry.');
+  else if (githubData) status.textContent = t(`GitHub 公开数据 · 更新于 ${timestamp} · 获星为公开仓库的 Stars 合计。`, `Public GitHub data · Updated ${timestamp} · Stars are summed across public owned repositories.`);
 }
 
-async function loadGithub() {
+function validGithubCache(cached) {
+  return cached && cached.user === GITHUB_USER
+    && [cached.repos, cached.stars, cached.followers].every(value => Number.isInteger(value) && value >= 0)
+    && Number.isFinite(cached.updated) && Date.now() >= cached.updated;
+}
+
+function freshGithubCache(cached) {
+  return validGithubCache(cached) && Date.now() - cached.updated < GITHUB_CACHE_TTL;
+}
+
+async function loadGithub({force = false} = {}) {
   if (githubRequest) return githubRequest;
-  try {
-    const cached = JSON.parse(localStorage.getItem('iris-github-v1') || 'null');
-    if (cached && cached.user === 'Iris-YixinXu' && typeof cached.repos === 'number' && typeof cached.stars === 'number' && typeof cached.followers === 'number' && typeof cached.updated === 'number' && Date.now() - cached.updated < 86400000) {
-      githubData = cached; updateGithub(); return;
-    }
-  } catch {}
+  if (!force) {
+    if (freshGithubCache(githubData)) { updateGithub(); return; }
+    try {
+      const cached = JSON.parse(localStorage.getItem(GITHUB_CACHE_KEY) || 'null');
+      if (validGithubCache(cached)) githubData = cached;
+      if (freshGithubCache(cached)) { updateGithub(); return; }
+    } catch {}
+  }
+  githubLoading = true;
+  githubFailed = false;
+  updateGithub();
   githubRequest = (async () => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
     const get = async path => {
-      const response = await fetch(`https://api.github.com/${path}`, {signal:controller.signal,headers:{Accept:'application/vnd.github+json'}});
+      const response = await fetch(`https://api.github.com/${path}`, {signal:controller.signal,cache:'no-store',headers:{Accept:'application/vnd.github+json'}});
       if (!response.ok) throw new Error('GitHub data unavailable');
       return response.json();
     };
     try {
-      const [user, initialRepos] = await Promise.all([get('users/Iris-YixinXu'), get('users/Iris-YixinXu/repos?per_page=100&type=owner&page=1')]);
+      const [user, initialRepos] = await Promise.all([get(`users/${GITHUB_USER}`), get(`users/${GITHUB_USER}/repos?per_page=100&type=owner&page=1`)]);
+      if (!Number.isInteger(user.public_repos) || user.public_repos < 0 || !Number.isInteger(user.followers) || user.followers < 0 || !Array.isArray(initialRepos)) throw new Error('Invalid public GitHub data');
       let repos = [...initialRepos];
       for (let page = 2; (page - 1) * 100 < user.public_repos; page++) {
-        const batch = await get(`users/Iris-YixinXu/repos?per_page=100&type=owner&page=${page}`);
+        const batch = await get(`users/${GITHUB_USER}/repos?per_page=100&type=owner&page=${page}`);
+        if (!Array.isArray(batch)) throw new Error('Invalid public repositories');
         repos.push(...batch); if (batch.length < 100) break;
       }
-      githubData = {user:'Iris-YixinXu',repos:user.public_repos,followers:user.followers,stars:repos.reduce((total, repo) => total + (repo.stargazers_count || 0), 0),updated:Date.now()};
-      try { localStorage.setItem('iris-github-v1', JSON.stringify(githubData)); } catch {}
+      githubData = {user:GITHUB_USER,repos:user.public_repos,followers:user.followers,stars:repos.filter(repo => repo.private !== true).reduce((total, repo) => total + (repo.stargazers_count || 0), 0),updated:Date.now()};
+      try { localStorage.setItem(GITHUB_CACHE_KEY, JSON.stringify(githubData)); } catch {}
     } catch { githubFailed = true; }
-    finally { clearTimeout(timeout); updateGithub(); }
+    finally { clearTimeout(timeout); githubLoading = false; githubRequest = null; updateGithub(); }
   })();
   return githubRequest;
 }
@@ -234,7 +266,8 @@ document.addEventListener('click', event => {
     language = button.dataset.language;
     try { localStorage.setItem('iris-language', language); } catch {}
     renderPage();
-  } else if (button?.dataset.project) openProject(button.dataset.project);
+  } else if (button?.hasAttribute('data-github-refresh')) loadGithub({force:true});
+  else if (button?.dataset.project) openProject(button.dataset.project);
   else if (button?.dataset.filter) {
     filter = button.dataset.filter; renderPage();
     $(`[data-filter="${filter}"]`)?.focus({preventScroll:true});
