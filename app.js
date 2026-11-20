@@ -138,7 +138,13 @@ function researchPage() {
 
 function portfolioPage() {
   const options = [['all', t('全部','All work')], ['ai','AI & Vision'], ['data',t('数据分析','Data analysis')], ['web',t('Web 开发','Web development')]];
-  return `<div class="eyebrow">THINGS I’VE BUILT & EXPLORED</div><h1 class="page-title">Portfolio<span style="color:var(--iris)">.</span></h1><p class="page-lead">${t('从视频理解到数据分析，再到完整的 Web 应用。这里收藏我做过的研究与工程项目。','From video understanding and data analysis to complete web applications. A selection of my research and engineering projects.')}</p><div class="filter-row" role="group" aria-label="${t('筛选项目','Filter projects')}">${options.map(([id, label]) => `<button type="button" data-filter="${id}" aria-pressed="${filter === id}">${label}</button>`).join('')}</div><div class="project-grid portfolio-grid">${projects.filter(p => filter === 'all' || p.category === filter).map(card).join('')}</div>${contactBox()}`;
+  const shiri = filter === 'all' || filter === 'web' ? `<section class="content-panel" aria-labelledby="shiri-title">
+    <span class="date">${t('个人小项目','PERSONAL PROJECT')}</span>
+    <h2 id="shiri-title">拾日 Shiri</h2>
+    <p>${t('我做的一本网页小手账，记录日程、灵感和照片，还可以和 AI 小猫聊聊天。','A little web journal I built for schedules, ideas, and photos, with an AI cat to chat with.')}</p>
+    <a class="text-link" href="/shiri-memo/">${t('打开体验版','Try the demo')} <span aria-hidden="true">↗</span></a>
+  </section>` : '';
+  return `<div class="eyebrow">THINGS I’VE BUILT & EXPLORED</div><h1 class="page-title">Portfolio<span style="color:var(--iris)">.</span></h1><p class="page-lead">${t('从视频理解到数据分析，再到完整的 Web 应用。这里收藏我做过的研究与工程项目。','From video understanding and data analysis to complete web applications. A selection of my research and engineering projects.')}</p><div class="filter-row" role="group" aria-label="${t('筛选项目','Filter projects')}">${options.map(([id, label]) => `<button type="button" data-filter="${id}" aria-pressed="${filter === id}">${label}</button>`).join('')}</div><div class="project-grid portfolio-grid">${projects.filter(p => filter === 'all' || p.category === filter).map(card).join('')}</div>${shiri}${contactBox()}`;
 }
 
 function emptyPage(route) {
