@@ -65,6 +65,13 @@ const projects = [
     ],
     outcome: ['完成预约、支付、认证和管理功能，并进行功能与压力测试。', 'Completed reservation, payment, authentication, and administration functionality with functional and stress testing.'],
   },
+  {
+    id: 'shiri', title: '拾日 Shiri', category: 'web', year: '2026', visual: 'shiri',
+    label: ['个人小项目', 'PERSONAL PROJECT'],
+    intro: ['我做的一本网页小手账，记录日程、灵感和照片，还可以和 AI 小猫聊聊天。', 'A little web journal I built for schedules, ideas, and photos, with an AI cat to chat with.'],
+    tags: ['JavaScript', 'Node.js'],
+    demo: '/shiri-memo/',
+  },
 ];
 const pair = (value) => language === 'zh' ? value[0] : value[1];
 
@@ -73,6 +80,7 @@ function heroArt() {
 }
 
 function projectVisual(type) {
+  if (type === 'shiri') return '<img src="/shiri-memo/cat-1.gif" alt="" width="128" height="128" loading="lazy">';
   if (type === 'vision') return `<svg viewBox="0 0 420 150" fill="none" aria-hidden="true"><rect x="14" y="8" width="236" height="120" rx="8" fill="#faf7fd" stroke="#d2c1e5"/><path d="M14 31h236" stroke="#e0d4ec"/><circle cx="27" cy="20" r="2" fill="#c3abdd"/><circle cx="36" cy="20" r="2" fill="#dbccec"/><circle cx="45" cy="20" r="2" fill="#dbccec"/><rect x="30" y="46" width="78" height="64" rx="4" fill="#e8dff2"/><path d="M41 90c10-25 21-10 31-25s18-12 23-8" stroke="#bba3d3"/><rect x="48" y="65" width="23" height="31" rx="2" stroke="#9573b8" stroke-dasharray="3 2"/><path d="m114 72 14 0m-4-4 4 4-4 4" stroke="#bba3d3"/><rect x="136" y="46" width="96" height="28" rx="4" fill="#efE8f5"/><rect x="147" y="55" width="58" height="3" rx="1.5" fill="#cab7de"/><rect x="147" y="62" width="40" height="2" rx="1" fill="#d9cbe7"/><rect x="136" y="81" width="96" height="29" rx="4" fill="#efe8f5"/><path d="m146 96 5 4 9-11" stroke="#bca1d1"/><path d="M168 94h42m-42 7h29" stroke="#d0bdE1" stroke-width="2"/><path d="M260 72h29m-6-5 6 5-6 5" stroke="#b9a2cd"/><rect x="303" y="28" width="100" height="81" rx="6" fill="#faf7fd" stroke="#d2c1e5"/><text x="315" y="48" font-family="monospace" font-size="10" fill="#a587c0">{ risk_record }</text><path d="M316 65h59m-59 11h43m-43 11h50" stroke="#d3c2e3" stroke-width="3"/><circle cx="379" cy="119" r="4" fill="#ccbaDF"/></svg>`;
   if (type === 'risk') return `<svg viewBox="0 0 350 150" fill="none" aria-hidden="true"><path d="M30 24v95h285" stroke="#b5c9bc"/><path d="M30 88h285M30 57h285M95 24v95M165 24v95M235 24v95" stroke="#d3e1d7" stroke-dasharray="3 4"/><path d="M40 106c32-1 35-31 71-26 32 5 42-43 70-42 40 2 51-13 113-13" stroke="#8faa97" stroke-width="2"/><path d="M40 106c32-1 35-31 71-26 32 5 42-43 70-42 40 2 51-13 113-13v94H40Z" fill="#b7cdbe" fill-opacity=".22"/><circle cx="111" cy="80" r="4" fill="#f7faf8" stroke="#92ad9b"/><circle cx="181" cy="38" r="4" fill="#f7faf8" stroke="#92ad9b"/><rect x="231" y="83" width="80" height="39" rx="5" fill="#f8fbf9" stroke="#bdcec3"/><text x="242" y="98" fill="#8da596" font-family="monospace" font-size="8">DATA → MODEL</text><path d="M242 110h52" stroke="#ccded2" stroke-width="3"/></svg>`;
   return `<svg viewBox="0 0 350 150" fill="none" aria-hidden="true"><rect x="32" y="12" width="282" height="112" rx="7" fill="#fffaf5" stroke="#e0cdbf"/><path d="M32 34h282" stroke="#e8d8cb"/><circle cx="45" cy="23" r="2" fill="#d4b9a7"/><path d="M57 23h52" stroke="#e3cfbf" stroke-width="3"/><rect x="48" y="49" width="66" height="59" rx="4" fill="#ecdcd0"/><path d="M60 88h42m-42-8h30" stroke="#d4bca8" stroke-width="2"/><rect x="130" y="48" width="64" height="11" rx="3" fill="#e9d8c9"/><path d="M130 71h107m-107 10h83" stroke="#e4d1c1" stroke-width="3"/><rect x="130" y="94" width="70" height="14" rx="4" fill="#d5b9a2"/><rect x="244" y="48" width="52" height="60" rx="4" fill="#f3e8df"/><path d="M252 63h35m-35 10h35m-35 10h35m-35 10h24" stroke="#d9c1ad" stroke-width="2"/></svg>`;
@@ -83,7 +91,11 @@ function renderProfile() {
 }
 
 function card(project) {
-  return `<article class="project-card"><div class="project-visual ${project.visual}">${projectVisual(project.visual)}<span class="visual-caption">${t('概念示意','CONCEPT DIAGRAM')}</span></div><div class="card-body"><div class="card-topline"><span>${pair(project.label)}</span><span aria-hidden="true">↗</span></div><h3>${project.title}</h3><p>${pair(project.intro)}</p><div class="card-tags">${project.tags.map(tag => `<span>${tag}</span>`).join('')}</div><div class="card-bottom"><button class="project-open" type="button" data-project="${project.id}" aria-label="${t('查看项目','Explore project')}: ${project.title}">${t('查看项目','Explore project')} <span aria-hidden="true">↗</span></button><span class="year">${project.year}</span></div></div></article>`;
+  const action = project.demo
+    ? `<a class="project-open" href="${project.demo}">${t('打开体验版','Try the demo')} <span aria-hidden="true">↗</span></a>`
+    : `<button class="project-open" type="button" data-project="${project.id}" aria-label="${t('查看项目','Explore project')}: ${project.title}">${t('查看项目','Explore project')} <span aria-hidden="true">↗</span></button>`;
+  const caption = project.demo ? '' : `<span class="visual-caption">${t('概念示意','CONCEPT DIAGRAM')}</span>`;
+  return `<article class="project-card"><div class="project-visual ${project.visual}">${projectVisual(project.visual)}${caption}</div><div class="card-body"><div class="card-topline"><span>${pair(project.label)}</span><span aria-hidden="true">↗</span></div><h3>${project.title}</h3><p>${pair(project.intro)}</p><div class="card-tags">${project.tags.map(tag => `<span>${tag}</span>`).join('')}</div><div class="card-bottom">${action}<span class="year">${project.year}</span></div></div></article>`;
 }
 
 function timeline() {
@@ -138,13 +150,7 @@ function researchPage() {
 
 function portfolioPage() {
   const options = [['all', t('全部','All work')], ['ai','AI & Vision'], ['data',t('数据分析','Data analysis')], ['web',t('Web 开发','Web development')]];
-  const shiri = filter === 'all' || filter === 'web' ? `<section class="content-panel" aria-labelledby="shiri-title">
-    <span class="date">${t('个人小项目','PERSONAL PROJECT')}</span>
-    <h2 id="shiri-title">拾日 Shiri</h2>
-    <p>${t('我做的一本网页小手账，记录日程、灵感和照片，还可以和 AI 小猫聊聊天。','A little web journal I built for schedules, ideas, and photos, with an AI cat to chat with.')}</p>
-    <a class="text-link" href="/shiri-memo/">${t('打开体验版','Try the demo')} <span aria-hidden="true">↗</span></a>
-  </section>` : '';
-  return `<div class="eyebrow">THINGS I’VE BUILT & EXPLORED</div><h1 class="page-title">Portfolio<span style="color:var(--iris)">.</span></h1><p class="page-lead">${t('从视频理解到数据分析，再到完整的 Web 应用。这里收藏我做过的研究与工程项目。','From video understanding and data analysis to complete web applications. A selection of my research and engineering projects.')}</p><div class="filter-row" role="group" aria-label="${t('筛选项目','Filter projects')}">${options.map(([id, label]) => `<button type="button" data-filter="${id}" aria-pressed="${filter === id}">${label}</button>`).join('')}</div><div class="project-grid portfolio-grid">${projects.filter(p => filter === 'all' || p.category === filter).map(card).join('')}</div>${shiri}${contactBox()}`;
+  return `<div class="eyebrow">THINGS I’VE BUILT & EXPLORED</div><h1 class="page-title">Portfolio<span style="color:var(--iris)">.</span></h1><p class="page-lead">${t('从视频理解到数据分析，再到完整的 Web 应用。这里收藏我做过的研究与工程项目。','From video understanding and data analysis to complete web applications. A selection of my research and engineering projects.')}</p><div class="filter-row" role="group" aria-label="${t('筛选项目','Filter projects')}">${options.map(([id, label]) => `<button type="button" data-filter="${id}" aria-pressed="${filter === id}">${label}</button>`).join('')}</div><div class="project-grid portfolio-grid">${projects.filter(p => filter === 'all' || p.category === filter).map(card).join('')}</div>${contactBox()}`;
 }
 
 function emptyPage(route) {

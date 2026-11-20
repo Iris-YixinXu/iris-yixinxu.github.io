@@ -18,3 +18,6 @@
 @media(max-width:760px){.brand>span{font-size:28px}.profile-advisor{grid-column:2;font-size:10px;margin-top:7px}.profile .chinese-name{font-size:8px;letter-spacing:1px}.hero h1{font-size:42px}}
 @media(max-width:760px){.profile-links .email-item{display:flex}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}.project-card:hover,.button:hover{transform:none}}
+
+.project-visual.shiri{display:grid;place-items:center;background:#edf2e9}
+.project-visual.shiri img{width:auto;height:100%;max-height:128px;object-fit:contain}
